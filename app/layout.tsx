@@ -6,7 +6,6 @@ import "./globals.css"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
-import { NotificationCenter } from "@/components/realtime/notification-center"
 
 export const metadata: Metadata = {
   title: "E-commerce Admin Platform",
@@ -35,9 +34,6 @@ html {
           <AuthProvider>
             {children}
             <Toaster />
-            <div className="fixed top-4 right-4 z-50">
-              <NotificationCenter />
-            </div>
           </AuthProvider>
         </ThemeProvider>
       </body>

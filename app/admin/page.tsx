@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { AdminDashboard } from "@/components/admin/admin-dashboard"
+import AdminLayout from "../../apps/laravel-core/resources/js/components/Layout/AdminLayout"
 
 export default async function AdminPage() {
   // Check authentication on server side
@@ -14,5 +14,5 @@ export default async function AdminPage() {
     redirect("/auth/login")
   }
 
-  return <AdminDashboard />
+  return <AdminLayout />
 }
