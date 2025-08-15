@@ -1,0 +1,78 @@
+# Prometheus configuration for monitoring e-commerce microservices
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Load rules once and periodically evaluate them
+rule_files: []
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Laravel Core Application
+  - job_name: 'laravel-core'
+    static_configs:
+      - targets: ['laravel-core:9000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Identity Service
+  - job_name: 'svc-identity'
+    static_configs:
+      - targets: ['svc-identity:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Catalog Service
+  - job_name: 'svc-catalog'
+    static_configs:
+      - targets: ['svc-catalog:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Inventory Service
+  - job_name: 'svc-inventory'
+    static_configs:
+      - targets: ['svc-inventory:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Orders Service
+  - job_name: 'svc-orders'
+    static_configs:
+      - targets: ['svc-orders:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Payments Service
+  - job_name: 'svc-payments'
+    static_configs:
+      - targets: ['svc-payments:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Infrastructure monitoring
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+    scrape_interval: 60s
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    scrape_interval: 60s
+
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['kafka:9092']
+    scrape_interval: 60s
