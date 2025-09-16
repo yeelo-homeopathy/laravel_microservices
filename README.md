@@ -1,315 +1,376 @@
-# E-commerce Microservices Platform
+# E-Commerce Platform
 
-A production-ready, scalable e-commerce platform built with Laravel 12, React, and NestJS microservices. Designed for high-performance online marketplaces with advanced features like multi-vendor support, real-time inventory management, and comprehensive order processing.
+A comprehensive, production-ready e-commerce platform built with Next.js 15, TypeScript, Supabase, and modern web technologies. Features a complete admin dashboard, customer storefront, authentication system, payment processing, and order management.
 
 ## 🏗️ Architecture Overview
 
 ### Core Technologies
-- **Laravel 12**: API Gateway, Admin Panel, Business Logic Orchestration
-- **React 18**: Modern admin interface with TypeScript
-- **NestJS**: Microservices for domain-specific operations
-- **PostgreSQL**: Primary OLTP database for transactional data
-- **MongoDB**: Flexible catalog and product data storage
-- **Redis**: Caching, session storage, and queue management
-- **Apache Kafka**: Event streaming and microservice communication
-- **OpenSearch**: Product search and analytics
-- **MinIO**: Object storage for images and assets
+- **Next.js 15**: Full-stack React framework with App Router
+- **TypeScript**: Type-safe development
+- **Supabase**: Backend-as-a-Service with PostgreSQL
+- **Tailwind CSS**: Utility-first CSS framework
+- **shadcn/ui**: Modern UI component library
+- **Stripe**: Payment processing (mock implementation)
+- **Real-time Features**: Live updates and notifications
 
-### Microservices Architecture
-
+### Project Structure
 \`\`\`
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Laravel Core  │    │  React Admin     │    │  Next.js Store  │
-│   (API Gateway) │    │  (Dashboard)     │    │  (Frontend)     │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-    ┌────────────────────────────┼────────────────────────────┐
-    │                            │                            │
-┌───▼────┐ ┌──────────┐ ┌────────▼───┐ ┌──────────┐ ┌────────────┐
-│Identity│ │ Catalog  │ │ Inventory  │ │ Orders   │ │ Payments   │
-│Service │ │ Service  │ │ Service    │ │ Service  │ │ Service    │
-└────────┘ └──────────┘ └────────────┘ └──────────┘ └────────────┘
-     │           │            │             │             │
-     └───────────┼────────────┼─────────────┼─────────────┘
-                 │            │             │
-         ┌───────▼────────────▼─────────────▼───────┐
-         │           Apache Kafka                   │
-         │        (Event Streaming)                 │
-         └─────────────────────────────────────────┘
+ecommerce-platform/
+├── app/                    # Next.js App Router pages
+│   ├── admin/             # Admin dashboard pages
+│   ├── auth/              # Authentication pages
+│   ├── checkout/          # Checkout flow
+│   ├── orders/            # Order management
+│   └── api/               # API routes
+├── components/            # Reusable React components
+│   ├── admin/             # Admin-specific components
+│   ├── auth/              # Authentication components
+│   ├── checkout/          # Checkout components
+│   └── ui/                # Base UI components
+├── lib/                   # Utility functions and services
+│   ├── auth/              # Authentication logic
+│   ├── services/          # Business logic services
+│   └── utils.ts           # Helper utilities
+├── scripts/               # Database scripts and migrations
+└── docs/                  # Documentation
 \`\`\`
 
-## 🚀 Quick Start
+## 🚀 Local Development Setup
 
 ### Prerequisites
-- Docker & Docker Compose
-- Node.js 18+ (for local development)
-- PHP 8.3+ (for local development)
-- Composer
+- **Node.js 18+** and npm/yarn
+- **Git** for version control
+- **Supabase Account** (free tier available)
+- **Modern Browser** (Chrome, Firefox, Safari, Edge)
 
-### Development Setup
-
-1. **Clone and Setup Environment**
-   \`\`\`bash
-   git clone <repository-url>
-   cd ecommerce-platform
-   chmod +x scripts/setup-development.sh
-   ./scripts/setup-development.sh
-   \`\`\`
-
-2. **Start All Services**
-   \`\`\`bash
-   docker-compose up -d
-   \`\`\`
-
-3. **Setup Laravel Application**
-   \`\`\`bash
-   cd apps/laravel-core
-   composer install
-   php artisan key:generate
-   php artisan migrate
-   php artisan db:seed
-   npm install && npm run build
-   \`\`\`
-
-4. **Access the Platform**
-   - Main Application: http://localhost:8080
-   - Admin Dashboard: http://localhost:8080/admin
-   - API Documentation: http://localhost:8080/api/documentation
-
-## 📊 Service Ports
-
-| Service | Port | Description |
-|---------|------|-------------|
-| Nginx | 8080 | Main application entry point |
-| Laravel Core | 9000 | PHP-FPM (internal) |
-| Identity Service | 3001 | User authentication & authorization |
-| Catalog Service | 3002 | Product catalog management |
-| Inventory Service | 3003 | Stock and warehouse management |
-| Orders Service | 3004 | Order processing and fulfillment |
-| Payments Service | 3005 | Payment processing and reconciliation |
-| PostgreSQL | 5432 | Primary database |
-| MongoDB | 27017 | Catalog database |
-| Redis | 6379 | Cache and session store |
-| Kafka | 9092 | Message broker |
-| Kafka UI | 8081 | Kafka management interface |
-| MinIO | 9000/9001 | Object storage |
-| OpenSearch | 9200 | Search engine |
-| Grafana | 3000 | Monitoring dashboards |
-| Prometheus | 9090 | Metrics collection |
-
-## 🏢 Business Domains
-
-### 1. Identity & Access Management
-- User registration and authentication
-- Role-based access control (RBAC)
-- OAuth2 integration
-- Session management
-
-### 2. Catalog Management
-- Product information management
-- Category and brand management
-- Attribute and variant handling
-- Media asset management
-
-### 3. Inventory Management
-- Multi-warehouse stock tracking
-- Real-time inventory updates
-- Stock reservation and allocation
-- Low stock alerts
-
-### 4. Order Management
-- Shopping cart functionality
-- Order processing workflow
-- Order status tracking
-- Return and refund processing
-
-### 5. Payment Processing
-- Multiple payment gateway support
-- Payment reconciliation
-- Refund processing
-- Financial reporting
-
-## 🔧 Development Workflow
-
-### Adding New Features
-
-1. **Create Feature Branch**
-   \`\`\`bash
-   git checkout -b feature/new-feature-name
-   \`\`\`
-
-2. **Update Relevant Microservice**
-   \`\`\`bash
-   cd apps/svc-[service-name]
-   # Make your changes
-   npm run test
-   npm run build
-   \`\`\`
-
-3. **Update API Documentation**
-   \`\`\`bash
-   # Update OpenAPI specs in docs/api/
-   # Generate documentation
-   php artisan l5-swagger:generate
-   \`\`\`
-
-4. **Test Integration**
-   \`\`\`bash
-   docker-compose up -d
-   # Run integration tests
-   \`\`\`
-
-### Database Migrations
-
-Each microservice manages its own database schema:
+### Step 1: Clone and Install
 
 \`\`\`bash
-# Laravel Core
-cd apps/laravel-core
-php artisan make:migration create_new_table
-php artisan migrate
+# Clone the repository
+git clone <your-repository-url>
+cd ecommerce-platform
 
-# NestJS Services
-cd apps/svc-[service-name]
-npm run migration:generate -- --name=CreateNewTable
-npm run migration:run
+# Install dependencies
+npm install
+# or
+yarn install
 \`\`\`
 
-### Event-Driven Communication
+### Step 2: Environment Setup
 
-Services communicate via Kafka events:
+1. **Create Environment File**
+   \`\`\`bash
+   cp .env.example .env.local
+   \`\`\`
 
-\`\`\`typescript
-// Publishing an event
-await this.kafkaService.emit('catalog.product.created', {
-  productId: product.id,
-  sku: product.sku,
-  sellerId: product.sellerId,
-  timestamp: new Date()
-});
+2. **Configure Supabase**
+   - Go to [supabase.com](https://supabase.com) and create a new project
+   - Get your project URL and anon key from Settings > API
+   - Update your `.env.local`:
 
-// Consuming an event
-@EventPattern('catalog.product.created')
-async handleProductCreated(data: ProductCreatedEvent) {
-  // Update search index
-  await this.searchService.indexProduct(data);
-}
+   \`\`\`env
+   # Supabase Configuration
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+   
+   # Database URLs (auto-generated by Supabase)
+   POSTGRES_URL=your_postgres_url
+   POSTGRES_PRISMA_URL=your_prisma_url
+   POSTGRES_URL_NON_POOLING=your_non_pooling_url
+   
+   # Development redirect URL
+   NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=http://localhost:3000/auth/callback
+   \`\`\`
+
+### Step 3: Database Setup
+
+1. **Run Database Migrations**
+   \`\`\`bash
+   # Execute all SQL scripts in order
+   npm run db:setup
+   
+   # Or run individually:
+   npm run db:migrate
+   npm run db:seed
+   \`\`\`
+
+2. **Enable Row Level Security (RLS)**
+   - Go to your Supabase dashboard
+   - Navigate to Authentication > Settings
+   - Enable Row Level Security for all tables
+   - The migration scripts include RLS policies
+
+### Step 4: Authentication Configuration
+
+1. **Configure Auth Settings in Supabase**
+   - Go to Authentication > Settings
+   - Set Site URL: `http://localhost:3000`
+   - Add Redirect URLs:
+     - `http://localhost:3000/auth/callback`
+     - `http://localhost:3000/admin`
+     - `http://localhost:3000/orders`
+
+2. **Enable Email Auth**
+   - In Authentication > Settings
+   - Enable "Enable email confirmations" if desired
+   - Configure SMTP settings for production
+
+### Step 5: Start Development Server
+
+\`\`\`bash
+# Start the development server
+npm run dev
+# or
+yarn dev
+
+# Server will start at http://localhost:3000
 \`\`\`
 
-## 📈 Monitoring & Observability
+### Step 6: Access the Platform
 
-### Metrics Collection
-- **Prometheus**: Collects metrics from all services
-- **Grafana**: Visualizes performance dashboards
-- **Custom Metrics**: Business KPIs and technical metrics
+- **Main Application**: http://localhost:3000
+- **Admin Dashboard**: http://localhost:3000/admin
+- **Authentication**: http://localhost:3000/auth/login
 
-### Logging
-- Centralized logging via Docker logs
-- Structured JSON logging
-- Log aggregation and analysis
+### Step 7: Create Admin User
 
-### Health Checks
-- Service health endpoints
-- Database connectivity checks
-- External service dependency monitoring
+1. **Register a new account** at http://localhost:3000/auth/sign-up
+2. **Update user role in Supabase**:
+   - Go to Supabase Dashboard > Table Editor > users
+   - Find your user and change `role` from `customer` to `admin`
+3. **Access admin dashboard** at http://localhost:3000/admin
+
+## 🔧 Development Commands
+
+\`\`\`bash
+# Development
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+npm run type-check   # Run TypeScript checks
+
+# Database
+npm run db:setup     # Run all database setup
+npm run db:migrate   # Run migrations only
+npm run db:seed      # Seed database with sample data
+npm run db:reset     # Reset and reseed database
+
+# Testing
+npm run test         # Run tests
+npm run test:watch   # Run tests in watch mode
+npm run test:coverage # Run tests with coverage
+\`\`\`
+
+## 🏢 Core Features
+
+### 1. Authentication & Authorization
+- **User Registration/Login**: Email/password authentication
+- **Role-based Access**: Admin and customer roles
+- **Protected Routes**: Middleware-based route protection
+- **Password Reset**: Secure password recovery flow
+- **Session Management**: Automatic token refresh
+
+### 2. Admin Dashboard
+- **Product Management**: CRUD operations for products
+- **Order Management**: View and update order status
+- **User Management**: Manage customer accounts
+- **Analytics**: Sales metrics and performance data
+- **Inventory Tracking**: Stock level monitoring
+- **Payment Oversight**: Transaction monitoring
+
+### 3. Customer Experience
+- **Product Catalog**: Browse and search products
+- **Shopping Cart**: Add/remove items, quantity updates
+- **Checkout Process**: Secure payment flow
+- **Order Tracking**: Real-time order status updates
+- **User Profile**: Account management and order history
+
+### 4. Payment Processing
+- **Stripe Integration**: Secure payment processing
+- **Multiple Payment Methods**: Cards, digital wallets
+- **Order Confirmation**: Email receipts and confirmations
+- **Refund Processing**: Admin-initiated refunds
+
+### 5. Real-time Features
+- **Live Order Updates**: Real-time status changes
+- **Inventory Sync**: Live stock level updates
+- **Admin Notifications**: Real-time alerts and updates
 
 ## 🔒 Security Features
 
-### Authentication & Authorization
-- JWT-based authentication
-- Role-based access control
-- API rate limiting
-- CORS configuration
-
 ### Data Protection
-- Input validation and sanitization
-- SQL injection prevention
-- XSS protection
-- CSRF protection
+- **Row Level Security (RLS)**: Database-level access control
+- **Input Validation**: Server-side validation for all inputs
+- **SQL Injection Prevention**: Parameterized queries
+- **XSS Protection**: Content sanitization
+
+### Authentication Security
+- **JWT Tokens**: Secure token-based authentication
+- **Password Hashing**: Bcrypt password encryption
+- **Session Security**: Secure cookie handling
+- **Rate Limiting**: API endpoint protection
 
 ### Infrastructure Security
-- SSL/TLS encryption
-- Network isolation
-- Secret management
-- Security headers
+- **HTTPS Enforcement**: SSL/TLS encryption
+- **CORS Configuration**: Cross-origin request protection
+- **Security Headers**: CSP, HSTS, and other security headers
+- **Environment Variables**: Secure configuration management
 
-## 🚀 Deployment
+## 📊 Database Schema
 
-### Production Deployment
+### Core Tables
+- **users**: User accounts and profiles
+- **products**: Product catalog
+- **categories**: Product categorization
+- **orders**: Order information
+- **order_items**: Order line items
+- **payments**: Payment transactions
+- **inventory**: Stock management
 
-1. **Environment Configuration**
-   \`\`\`bash
-   # Update production environment variables
-   cp .env.production .env
-   \`\`\`
+### Relationships
+- Users have many Orders
+- Orders have many Order Items
+- Products belong to Categories
+- Orders have one Payment
+- Products have Inventory records
 
-2. **Build and Deploy**
-   \`\`\`bash
-   docker-compose -f docker-compose.prod.yml up -d
-   \`\`\`
+## 🚀 Deployment Options
 
-3. **Database Migrations**
-   \`\`\`bash
-   docker-compose exec laravel-core php artisan migrate --force
-   \`\`\`
+### Vercel (Recommended)
+1. **Connect GitHub**: Link your repository to Vercel
+2. **Configure Environment**: Add all environment variables
+3. **Deploy**: Automatic deployment on push to main
 
-### Scaling Services
-
+### Docker
 \`\`\`bash
-# Scale specific services
-docker-compose up -d --scale svc-catalog=3 --scale svc-orders=2
+# Build and run with Docker
+docker build -t ecommerce-platform .
+docker run -p 3000:3000 ecommerce-platform
 \`\`\`
+
+### Manual Deployment
+\`\`\`bash
+# Build the application
+npm run build
+
+# Start production server
+npm start
+\`\`\`
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+1. **Database Connection Errors**
+   - Verify Supabase URL and keys
+   - Check network connectivity
+   - Ensure RLS policies are configured
+
+2. **Authentication Issues**
+   - Verify redirect URLs in Supabase
+   - Check environment variables
+   - Ensure auth callbacks are configured
+
+3. **Build Errors**
+   - Run `npm run type-check` for TypeScript errors
+   - Check for missing dependencies
+   - Verify environment variables
+
+### Debug Mode
+\`\`\`bash
+# Enable debug logging
+DEBUG=* npm run dev
+
+# Check database connections
+npm run db:test
+
+# Verify environment setup
+npm run env:check
+\`\`\`
+
+## 🧪 Testing
+
+### Running Tests
+\`\`\`bash
+# Unit tests
+npm run test
+
+# Integration tests
+npm run test:integration
+
+# E2E tests
+npm run test:e2e
+
+# Test coverage
+npm run test:coverage
+\`\`\`
+
+### Test Structure
+- **Unit Tests**: Component and utility testing
+- **Integration Tests**: API endpoint testing
+- **E2E Tests**: Full user flow testing
+- **Database Tests**: Data layer testing
 
 ## 📚 API Documentation
 
-### REST API Endpoints
+### Authentication Endpoints
+- `POST /api/auth/login` - User login
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/logout` - User logout
+- `POST /api/auth/refresh` - Token refresh
 
-- **Authentication**: `/api/auth/*`
-- **Products**: `/api/products/*`
-- **Orders**: `/api/orders/*`
-- **Users**: `/api/users/*`
-- **Admin**: `/api/admin/*`
+### Product Endpoints
+- `GET /api/products` - List products
+- `GET /api/products/[id]` - Get product details
+- `POST /api/products` - Create product (admin)
+- `PUT /api/products/[id]` - Update product (admin)
+- `DELETE /api/products/[id]` - Delete product (admin)
 
-### Event Schema
-
-Events follow a standardized schema:
-
-\`\`\`json
-{
-  "eventType": "catalog.product.created",
-  "version": "1.0",
-  "timestamp": "2024-01-15T10:30:00Z",
-  "source": "catalog-service",
-  "data": {
-    "productId": "uuid",
-    "sku": "string",
-    "sellerId": "uuid"
-  }
-}
-\`\`\`
+### Order Endpoints
+- `GET /api/orders` - List user orders
+- `GET /api/orders/[id]` - Get order details
+- `POST /api/orders` - Create new order
+- `PUT /api/orders/[id]` - Update order status (admin)
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Update documentation
-6. Submit a pull request
+1. **Fork the Repository**
+2. **Create Feature Branch**: `git checkout -b feature/amazing-feature`
+3. **Make Changes**: Follow coding standards
+4. **Add Tests**: Ensure test coverage
+5. **Update Documentation**: Keep docs current
+6. **Submit Pull Request**: Detailed description of changes
+
+### Coding Standards
+- **TypeScript**: Strict type checking
+- **ESLint**: Code quality enforcement
+- **Prettier**: Code formatting
+- **Conventional Commits**: Standardized commit messages
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+## 🆘 Support & Resources
 
-- **Documentation**: `/docs` directory
-- **API Reference**: http://localhost:8080/api/documentation
-- **Issues**: GitHub Issues
-- **Discussions**: GitHub Discussions
+### Documentation
+- [Deployment Guide](docs/DEPLOYMENT.md)
+- [Contributing Guide](docs/CONTRIBUTING.md)
+- [API Reference](docs/API.md)
+
+### External Resources
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Supabase Documentation](https://supabase.com/docs)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [shadcn/ui Components](https://ui.shadcn.com)
+
+### Getting Help
+- **Issues**: GitHub Issues for bugs and feature requests
+- **Discussions**: GitHub Discussions for questions
+- **Email**: support@yourplatform.com
 
 ---
 
-Built with ❤️ for scalable e-commerce solutions.
+Built with ❤️ using modern web technologies for scalable e-commerce solutions.

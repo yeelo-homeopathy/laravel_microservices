@@ -76,8 +76,7 @@ export async function middleware(request: NextRequest) {
   if (code) {
     // Exchange the code for a session
     await supabase.auth.exchangeCodeForSession(code)
-    // Redirect to admin dashboard after successful auth
-    return NextResponse.redirect(new URL("/admin", request.url))
+    return NextResponse.redirect(new URL("/auth/callback", request.url))
   }
 
   // Refresh session if expired - required for Server Components
@@ -87,9 +86,15 @@ export async function middleware(request: NextRequest) {
   const isAuthRoute =
     request.nextUrl.pathname.startsWith("/auth/login") ||
     request.nextUrl.pathname.startsWith("/auth/sign-up") ||
+    request.nextUrl.pathname.startsWith("/auth/forgot-password") ||
+    request.nextUrl.pathname.startsWith("/auth/reset-password") ||
     request.nextUrl.pathname === "/auth/callback"
 
-  const isPublicRoute = request.nextUrl.pathname === "/" || request.nextUrl.pathname.startsWith("/api/public")
+  const isPublicRoute =
+    request.nextUrl.pathname === "/" ||
+    request.nextUrl.pathname.startsWith("/api/public") ||
+    request.nextUrl.pathname.startsWith("/products") ||
+    request.nextUrl.pathname.startsWith("/categories")
 
   // If accessing protected routes (admin, dashboard, etc.) without auth
   if (!isAuthRoute && !isPublicRoute) {
@@ -100,6 +105,14 @@ export async function middleware(request: NextRequest) {
     if (!session) {
       const redirectUrl = new URL("/auth/login", request.url)
       return NextResponse.redirect(redirectUrl)
+    }
+
+    if (request.nextUrl.pathname.startsWith("/admin")) {
+      const { data: userData } = await supabase.from("users").select("role").eq("id", session.user.id).single()
+
+      if (userData?.role !== "admin") {
+        return NextResponse.redirect(new URL("/", request.url))
+      }
     }
   }
 
