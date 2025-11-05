@@ -1,0 +1,153 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jwt-secret
+  namespace: staging
+type: Opaque
+stringData:
+  secret: ${JWT_SECRET_STAGING}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: laravel-core
+  namespace: staging
+  labels:
+    app: laravel-core
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: laravel-core
+  template:
+    metadata:
+      labels:
+        app: laravel-core
+        version: "1.0"
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: laravel-core
+        image: ghcr.io/yourusername/laravel-core:${GITHUB_SHA}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9000
+          name: php-fpm
+        - containerPort: 8000
+          name: http
+        env:
+        - name: APP_ENV
+          value: "staging"
+        - name: APP_DEBUG
+          value: "false"
+        - name: DB_HOST
+          value: "postgres"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_DATABASE
+          value: "homeopathy_erp"
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: password
+        - name: REDIS_HOST
+          value: "redis"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jwt-secret
+              key: secret
+        - name: QUEUE_CONNECTION
+          value: "redis"
+        - name: CACHE_DRIVER
+          value: "redis"
+        - name: SESSION_DRIVER
+          value: "redis"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/ready
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 82
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: laravel-core
+  namespace: staging
+  labels:
+    app: laravel-core
+spec:
+  type: LoadBalancer
+  selector:
+    app: laravel-core
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  - port: 9000
+    targetPort: 9000
+    protocol: TCP
+    name: php-fpm
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: laravel-core-hpa
+  namespace: staging
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: laravel-core
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

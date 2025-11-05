@@ -4,24 +4,39 @@
 /node_modules
 */node_modules
 **/node_modules
+.pnp
+.pnp.js
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
 
 # next.js
 /.next/
 /out/
+apps/nextjs-*/out/
+apps/nextjs-*/.next/
 
 # production
 /build
 */build
 */dist
+/dist
+apps/svc-*/dist/
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.env.*.swp
 
 # env files
-#.env*
+.env
+.env.local
+.env.*.local
+.env.production.local
+.env.development.local
+.env.test.local
 #!.env.example
 
 # vercel
@@ -45,17 +60,19 @@ apps/laravel-core/npm-debug.log
 apps/laravel-core/yarn-error.log
 
 # NestJS specific
-apps/svc-*/dist/
 apps/svc-*/coverage/
 apps/svc-*/.nyc_output/
 
 # Database
 *.sqlite
 *.sqlite3
+data/
+postgres_data/
 
 # Docker
 .docker/
 docker-compose.override.yml
+.dockerignore
 
 # IDE
 .vscode/
@@ -63,8 +80,6 @@ docker-compose.override.yml
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
 .DS_Store?
 ._*
@@ -72,14 +87,12 @@ docker-compose.override.yml
 .Trashes
 ehthumbs.db
 Thumbs.db
+*.sublime-project
+*.sublime-workspace
 
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
+# OS
+.AppleDouble
+.LSOverride
 
 # Runtime data
 pids/
@@ -128,6 +141,8 @@ jspm_packages/
 # Temporary folders
 tmp/
 temp/
+apps/svc-*/tmp/
+apps/svc-*/temp/
 
 # Editor directories and files
 .vscode/*
@@ -141,3 +156,6 @@ temp/
 
 # Process IDs for development scripts
 *.pid
+
+# Turbo
+.turbo/

@@ -394,6 +394,110 @@ services:
       - ecom-network
     restart: unless-stopped
 
+  # =============================================================================
+  # HOMEOPATHY ERP SERVICES
+  # =============================================================================
+  
+  # PostgreSQL Database for Homeopathy ERP
+  homeopathy_erp_postgres:
+    image: postgres:16-alpine
+    container_name: homeopathy_erp_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: homeopathy_erp
+      POSTGRES_USER: erp_user
+      POSTGRES_PASSWORD: erp_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-postgres.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - erp-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U erp_user -d homeopathy_erp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache & Session Store for Homeopathy ERP
+  homeopathy_erp_redis:
+    image: redis:7-alpine
+    container_name: homeopathy_erp_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - erp-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Laravel Backend API for Homeopathy ERP
+  homeopathy_erp_backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: homeopathy_erp_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME="Homeopathy ERP"
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_KEY=base64:${APP_KEY:-KN7qjjfj8fjwjk8w8w88}
+      - DB_CONNECTION=pgsql
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=homeopathy_erp
+      - DB_USERNAME=erp_user
+      - DB_PASSWORD=erp_password
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CACHE_DRIVER=redis
+      - SESSION_DRIVER=redis
+      - QUEUE_CONNECTION=redis
+    volumes:
+      - ./backend:/var/www/html
+      - backend_storage:/var/www/html/storage
+      - backend_logs:/var/www/html/storage/logs
+    depends_on:
+      homeopathy_erp_postgres:
+        condition: service_healthy
+      homeopathy_erp_redis:
+        condition: service_healthy
+    networks:
+      - erp-network
+    restart: unless-stopped
+    command: php artisan serve --host=0.0.0.0 --port=8000
+
+  # Next.js Frontend (Admin + Customer) for Homeopathy ERP
+  homeopathy_erp_frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: homeopathy_erp_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api
+      - NEXT_PUBLIC_APP_NAME=Homeopathy ERP
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - homeopathy_erp_backend
+    networks:
+      - erp-network
+    restart: unless-stopped
+
 # =============================================================================
 # NETWORKS & VOLUMES
 # =============================================================================
@@ -403,6 +507,8 @@ networks:
     ipam:
       config:
         - subnet: 172.20.0.0/16
+  erp-network:
+    driver: bridge
 
 volumes:
   postgres_data:
@@ -426,4 +532,8 @@ volumes:
   grafana_data:
     driver: local
   laravel_storage:
+    driver: local
+  backend_storage:
+    driver: local
+  backend_logs:
     driver: local

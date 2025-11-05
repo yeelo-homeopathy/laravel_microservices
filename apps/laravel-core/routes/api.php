@@ -5,6 +5,16 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\ServiceProxyController;
+use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\SalesOrderController;
+use App\Http\Controllers\Api\PurchaseOrderController;
+use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\SupplierController;
+use App\Http\Controllers\Api\BatchController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\BrandController;
+use App\Http\Controllers\Api\InventoryController;
 use App\Http\Middleware\ApiGateway\ServiceDiscovery;
 use App\Http\Middleware\ApiGateway\LoadBalancer;
 use App\Http\Middleware\ApiGateway\CircuitBreaker;
@@ -14,12 +24,11 @@ use App\Http\Middleware\ApiGateway\ResponseTransformer;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes - E-commerce Platform API Gateway
+| API Routes - Homeopathy ERP Platform
 |--------------------------------------------------------------------------
 |
-| This file contains the API routes for the e-commerce platform.
-| The Laravel core application acts as an API Gateway, routing requests
-| to appropriate microservices while handling authentication, rate limiting,
+| This file contains the API routes for the homeopathy ERP platform.
+| The Laravel core application handles authentication, rate limiting,
 | and request/response transformation.
 |
 */
@@ -65,6 +74,51 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/sessions', [AuthController::class, 'sessions']);
         Route::delete('/sessions/{id}', [AuthController::class, 'revokeSession']);
     });
+
+    // =============================================================================
+    // HOMEOPATHY ERP ROUTES
+    // =============================================================================
+
+    // Brands Management
+    Route::apiResource('brands', BrandController::class);
+
+    // Products & Categories
+    Route::apiResource('products', ProductController::class);
+    Route::get('/products/{id}/stock', [ProductController::class, 'getStock']);
+
+    // Batches & Inventory
+    Route::apiResource('batches', BatchController::class);
+    Route::get('/batches/aging/analysis', [BatchController::class, 'getAgingAnalysis']);
+    Route::get('/batches/expiry/alerts', [BatchController::class, 'getExpiryAlerts']);
+    Route::get('/inventory/aging', [InventoryController::class, 'agingReport']);
+    Route::get('/inventory/expiry-alerts', [InventoryController::class, 'expiryAlerts']);
+    Route::get('/inventory/dead-stock', [InventoryController::class, 'deadStock']);
+
+    // Customers Management (Multi-type: doctor, pharmacy, clinic, retail, distributor)
+    Route::apiResource('customers', CustomerController::class);
+    Route::get('/customers/{customer}/outstanding', [CustomerController::class, 'getOutstanding']);
+
+    // Suppliers Management
+    Route::apiResource('suppliers', SupplierController::class);
+
+    // Sales Orders
+    Route::apiResource('sales-orders', SalesOrderController::class);
+    Route::patch('/sales-orders/{salesOrder}/status', [SalesOrderController::class, 'updateStatus']);
+
+    // Purchase Orders
+    Route::apiResource('purchase-orders', PurchaseOrderController::class);
+    Route::post('/purchase-orders/{purchaseOrder}/receive-goods', [PurchaseOrderController::class, 'receiveGoods']);
+
+    // Payments & Reconciliation
+    Route::apiResource('payments', PaymentController::class);
+    Route::post('/payments/sales-order/{salesOrder}', [PaymentController::class, 'recordPayment']);
+
+    // Analytics & Dashboard
+    Route::get('/dashboard/metrics', [DashboardController::class, 'metrics']);
+    Route::get('/dashboard/sales-summary', [DashboardController::class, 'salesSummary']);
+    Route::get('/analytics/aging', [DashboardController::class, 'agingAnalysis']);
+    Route::get('/analytics/profitability', [DashboardController::class, 'profitabilityAnalysis']);
+
 
     // =============================================================================
     // MICROSERVICE PROXY ROUTES
@@ -280,21 +334,20 @@ Route::middleware(['auth:sanctum', 'role:super-admin|admin'])->prefix('admin')->
 // API Documentation
 Route::get('/docs', function () {
     return response()->json([
-        'message' => 'E-commerce Platform API Gateway',
+        'message' => 'Homeopathy ERP Platform API',
         'version' => '1.0.0',
         'documentation' => url('/api/documentation'),
         'health' => url('/api/health'),
-        'services' => [
-            'identity' => 'User management and authentication',
-            'catalog' => 'Product catalog and categories',
-            'inventory' => 'Stock and warehouse management',
-            'pricing' => 'Dynamic pricing and promotions',
-            'orders' => 'Order processing and fulfillment',
-            'payments' => 'Payment processing and transactions',
-            'notifications' => 'Email, SMS, and push notifications',
-            'analytics' => 'Data analytics and reporting',
-            'search' => 'Product search and filtering',
-            'reviews' => 'Product reviews and ratings',
+        'erp_endpoints' => [
+            'brands' => 'Brand management',
+            'products' => 'Product catalog',
+            'batches' => 'Batch tracking and expiry',
+            'customers' => 'Customer management (doctor, pharmacy, clinic, retail, distributor)',
+            'suppliers' => 'Supplier management',
+            'sales-orders' => 'Sales order processing',
+            'purchase-orders' => 'Purchase order management',
+            'payments' => 'Payment tracking and reconciliation',
+            'dashboard' => 'Analytics and business intelligence',
         ],
     ]);
 });

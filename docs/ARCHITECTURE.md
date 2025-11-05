@@ -1,50 +1,57 @@
-# Architecture Guide
+# Homeopathy ERP System Architecture
 
-This document provides a comprehensive overview of the E-commerce Microservices Platform architecture, design patterns, and technical decisions.
+This document provides a comprehensive overview of the enterprise homeopathy ERP system architecture, design patterns, and technical decisions.
 
 ## System Overview
 
-The platform follows a microservices architecture pattern with event-driven communication, designed for scalability, maintainability, and high availability.
+The platform follows a modern microservices architecture pattern with event-driven communication, designed for scalability, maintainability, and business-specific ERP requirements.
 
 ### High-Level Architecture
 
 \`\`\`
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Next.js       │    │   Mobile App    │    │   Third-party   │
-│   Frontend      │    │   (Future)      │    │   Integrations  │
-└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
-          │                      │                      │
-          └──────────────────────┼──────────────────────┘
-                                 │
-                    ┌─────────────┴─────────────┐
-                    │     Laravel API Gateway    │
-                    │     (Port 8000)           │
-                    └─────────────┬─────────────┘
-                                 │
-          ┌──────────────────────┼──────────────────────┐
-          │                      │                      │
-┌─────────┴───────┐    ┌─────────┴───────┐    ┌─────────┴───────┐
-│   Identity      │    │   Catalog       │    │   Orders        │
-│   Service       │    │   Service       │    │   Service       │
-│   (Port 3001)   │    │   (Port 3002)   │    │   (Port 3004)   │
-└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
-          │                      │                      │
-          └──────────────────────┼──────────────────────┘
-                                 │
-                    ┌─────────────┴─────────────┐
-                    │     Event Bus (Kafka)     │
-                    └───────────────────────────┘
+┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐
+│  Admin Dashboard │    │Customer Frontend │    │  POS Terminal    │
+│    (Next.js)     │    │    (Next.js)     │    │   (Web/Mobile)   │
+└──────────┬───────┘    └──────────┬───────┘    └──────────┬───────┘
+           │                       │                       │
+           └───────────────────────┼───────────────────────┘
+                                   │
+                        ┌──────────▼──────────┐
+                        │  Laravel API Gateway │
+                        │  - Auth & ACL       │
+                        │  - Business Logic   │
+                        │  - Service Routing  │
+                        └──────────┬──────────┘
+                                   │
+         ┌─────────────────────────┼─────────────────────────┐
+         │                         │                         │
+    ┌────▼────────┐    ┌──────────▼─────────┐    ┌──────────▼──────┐
+    │   Identity  │    │   Inventory &      │    │    Orders &     │
+    │   Service   │    │   Stock Aging      │    │    Payments     │
+    │  (NestJS)   │    │    Service         │    │    Service      │
+    │             │    │    (NestJS)        │    │    (NestJS)     │
+    └────┬────────┘    └──────────┬─────────┘    └──────────┬──────┘
+         │                        │                        │
+         └────────────────────────┼────────────────────────┘
+                                  │
+                     ┌────────────▼────────────┐
+                     │  Event Bus (Kafka)      │
+                     │  - Order Events         │
+                     │  - Inventory Updates    │
+                     │  - Payment Confirmations│
+                     └─────────────────────────┘
 \`\`\`
 
 ## Core Components
 
-### 1. API Gateway (Laravel 12)
+### 1. API Gateway (Laravel)
 
-**Purpose**: Central entry point for all client requests, handles routing, authentication, and cross-cutting concerns.
+**Purpose**: Central entry point for all client requests, handles routing, business logic, and cross-cutting concerns.
 
 **Responsibilities**:
 - Request routing to appropriate microservices
-- Authentication and authorization
+- Authentication and authorization with JWT
+- Business logic for ERP workflows
 - Rate limiting and throttling
 - Request/response transformation
 - Circuit breaker pattern implementation
@@ -55,196 +62,231 @@ The platform follows a microservices architecture pattern with event-driven comm
 - Health check aggregation
 - Centralized logging and monitoring
 - CORS handling
-- API versioning
+- API versioning support
 
-### 2. Frontend Application (Next.js 14)
+### 2. Frontend Applications (Next.js 14)
 
-**Purpose**: Customer-facing web application and admin dashboard.
+**Admin Dashboard**:
+- **Purpose**: Business management interface for dealers/owners
+- **Features**:
+  - Multi-brand product management
+  - Customer segmentation (retail, wholesale, doctors, pharmacies)
+  - Purchase order management
+  - Dynamic GST-based pricing
+  - Stock aging analysis and reports
+  - Batch and expiry tracking
+  - Payment pending aging analysis
+  - Profitability analysis and KPIs
 
-**Architecture**:
-- **App Router**: Modern Next.js routing with server components
-- **Server-Side Rendering**: Improved SEO and performance
-- **Client-Side State**: React Query for server state management
-- **Authentication**: Supabase Auth integration
-- **Styling**: Tailwind CSS with shadcn/ui components
+**Customer Frontend**:
+- **Purpose**: B2B/B2C customer ordering interface
+- **Features**:
+  - Product browsing by brand and category
+  - Real-time inventory checks
+  - Dynamic pricing per customer type
+  - Cart management
+  - Checkout with payment gateway
+  - Order tracking and history
+  - Invoice generation with GST details
 
-**Key Features**:
-- Responsive design for all devices
-- Real-time updates via WebSocket connections
-- Progressive Web App (PWA) capabilities
-- Optimized images and assets
+**Technology Stack**:
+- Next.js 14 App Router
+- Server-side rendering for performance
+- React Query for server state
+- Tailwind CSS + shadcn/ui components
 - TypeScript for type safety
 
 ### 3. Microservices
 
 #### Identity Service (NestJS)
-**Database**: PostgreSQL
-**Purpose**: User authentication, authorization, and profile management
+**Database**: PostgreSQL (dedicated schema)
+**Purpose**: User authentication, authorization, and role management
 
 **Features**:
-- JWT token management
-- OAuth2 integration (Google, Facebook)
+- JWT token management with refresh tokens
 - Role-based access control (RBAC)
+- Multi-user role support (Admin, Dealer, Customer)
 - Session management
 - Password reset and email verification
 - Account lockout and security features
+- Audit logging for all auth events
 
-#### Catalog Service (NestJS)
-**Database**: MongoDB
-**Purpose**: Product catalog, categories, and search functionality
+**ERP-Specific Features**:
+- Dealer hierarchy management
+- Customer type-based access control
+- Permission inheritance for sub-dealers
 
-**Features**:
-- Flexible product schema with variants
-- Category and brand management
-- Full-text search with OpenSearch
-- Media management with MinIO
-- Product recommendations
-- Inventory integration
-
-#### Orders Service (NestJS)
-**Database**: PostgreSQL
-**Purpose**: Order processing, cart management, and fulfillment
+#### Inventory & Stock Aging Service (NestJS)
+**Database**: PostgreSQL (dedicated schema)
+**Purpose**: Manage complex inventory with batch tracking, expiry, and stock aging analysis
 
 **Features**:
-- Shopping cart functionality
-- Order lifecycle management
-- Payment processing integration
-- Inventory reservation
-- Shipping and tracking
-- Order history and analytics
+- Multi-brand product catalog
+- Batch-level inventory tracking (SKU, manufacturing date, expiry date)
+- Stock aging calculations (days in stock, holding cost)
+- Real-time stock checks for sales orders
+- Automated expiry alerts
+- Dead stock identification
+- Cost-benefit analysis per batch
+- Inventory movement audit trail
+
+**ERP-Specific Analytics**:
+- ABC analysis (fast-moving vs slow-moving)
+- Aging bucket reports (0-30 days, 30-60 days, etc.)
+- Dead stock value calculation
+- Monthly interest accrual for aged stock
+- Stock turnover ratios
+
+#### Orders & Payments Service (NestJS)
+**Database**: PostgreSQL (dedicated schema)
+**Purpose**: Order processing, fulfillment, and payment management
+
+**Features**:
+- Sales order creation with customer-specific pricing
+- Cart management and validation
+- Payment processing (Stripe, Razorpay)
+- Invoice generation with GST calculation
+- Order fulfillment tracking
+- Return and refund processing
+- Payment aging and outstanding tracking
+
+**B2B Features**:
+- Credit limit management per customer
+- Payment terms (COD, 15/30/60 days)
+- Pending payment aging analysis
+- Automatic reminders for overdue payments
 
 ## Data Architecture
 
-### Database Strategy
+### PostgreSQL Database Design
 
-**PostgreSQL** (Relational Data):
-- User profiles and authentication
-- Order transactions and history
-- Payment records and financial data
-- Inventory levels and movements
-- Event store for event sourcing
+**Core Tables**:
+- **users** - User accounts with roles
+- **customers** - Customer profiles (retail, wholesale, doctors, pharmacies)
+- **brands** - Product brands
+- **products** - Product master data
+- **product_potencies** - Homeopathy potencies (30C, 200C, etc.)
+- **batches** - Individual product batches with SKU, manufacturing date, expiry
+- **inventory** - Stock levels by batch
+- **stock_movements** - Audit trail of inventory changes
+- **suppliers** - Supplier information
+- **purchase_orders** - Inbound purchase orders
+- **sales_orders** - Outbound sales orders
+- **order_items** - Line items with batch selection
+- **payments** - Payment records with status
+- **pricing** - Dynamic pricing rules by customer type and time
+- **aging_analysis** - Stock aging calculations
 
-**MongoDB** (Document Data):
-- Product catalog with flexible schemas
-- Product variants and attributes
-- Category hierarchies
-- Search indexes and metadata
+**Event Store**:
+- Complete audit trail of all state changes
+- Enables replay and temporal queries
+- Supports compliance and traceability
 
-**Redis** (Caching & Sessions):
-- Session storage
+### Redis (Caching & Sessions)
+- Session storage for authenticated users
 - API response caching
+- Real-time inventory caches
 - Rate limiting counters
-- Real-time data caching
+- Pending order queues
 
-### Event Sourcing & CQRS
-
-**Event Store**: All state changes are stored as immutable events
-- Complete audit trail
-- Ability to replay events
-- Temporal queries and analytics
-- Debugging and troubleshooting
-
-**Command Query Responsibility Segregation**:
-- Separate read and write models
-- Optimized query performance
-- Scalable read replicas
-- Event-driven updates
+### Kafka (Event Streaming)
+**Topics**:
+- `order.created` - New sales order
+- `order.confirmed` - Order confirmed with payment
+- `inventory.updated` - Stock movements
+- `batch.expiring` - Expiry alerts
+- `payment.pending` - Outstanding payment notifications
+- `stock.aged` - Stock aging updates
 
 ## Communication Patterns
 
 ### Synchronous Communication
-
 **HTTP/REST APIs**:
 - Client to API Gateway
-- API Gateway to microservices (when immediate response needed)
-- External service integrations
-
-**GraphQL** (Future):
-- Efficient data fetching
-- Type-safe queries
-- Real-time subscriptions
+- API Gateway to microservices
+- Real-time data requirements (inventory checks, pricing)
 
 ### Asynchronous Communication
-
-**Event-Driven Architecture**:
-- Kafka for event streaming
-- Decoupled service communication
-- Event sourcing and replay
-- Real-time notifications
+**Event-Driven Architecture** (Kafka):
+- Order processing workflows
+- Inventory updates across services
+- Notification triggers
+- Audit logging
+- Analytics data pipelines
 
 **Message Patterns**:
-- **Events**: State change notifications
-- **Commands**: Action requests
-- **Queries**: Data requests
-- **Sagas**: Distributed transaction coordination
+- **Events**: State change notifications (order created, payment received)
+- **Commands**: Action requests (process order, update inventory)
+- **Queries**: Data requests (get stock level, check pricing)
+- **Sagas**: Distributed transactions (order fulfillment workflow)
 
 ## Security Architecture
 
 ### Authentication & Authorization
 
 **Multi-Layer Security**:
-1. **API Gateway**: JWT validation and rate limiting
-2. **Service Level**: Role-based access control
-3. **Database Level**: Row-level security
-4. **Network Level**: Service mesh (future)
+1. **API Gateway**: JWT validation, signature verification
+2. **Service Level**: Role-based access control (RBAC)
+3. **Database Level**: Row-level security (RLS) for multi-tenant data
+4. **Network Level**: TLS encryption for all communication
 
 **Security Features**:
-- JWT tokens with refresh mechanism
-- OAuth2 integration
-- RBAC with fine-grained permissions
-- Account lockout and brute force protection
-- Audit logging for all actions
+- JWT tokens with 24-hour expiry
+- Refresh tokens for extended sessions
+- Role-based permissions (Admin, Dealer, Manager, Customer)
+- Audit logging for compliance
+- Password policies and enforcement
 
 ### Data Protection
 
 **Encryption**:
 - TLS 1.3 for data in transit
-- AES-256 for sensitive data at rest
+- AES-256 for sensitive data at rest (customer PII, payment info)
 - Bcrypt for password hashing
-- JWT signing with RS256
+- JWT RS256 signing
 
-**Privacy**:
-- GDPR compliance features
-- Data anonymization
-- Right to be forgotten
-- Consent management
+**Compliance**:
+- GST compliance features
+- Invoice audit trails
+- Payment reconciliation logs
+- Supplier and customer data protection
 
 ## Scalability & Performance
 
 ### Horizontal Scaling
 
-**Stateless Services**:
+**Stateless Architecture**:
 - All microservices are stateless
-- Session data stored in Redis
-- Load balancing with round-robin
+- Session data in Redis
+- Load balancing across service instances
 
 **Database Scaling**:
 - Read replicas for query optimization
-- Sharding for large datasets
-- Connection pooling
-- Query optimization
+- Connection pooling (pgBouncer)
+- Query optimization and indexing
+- Partitioning for large tables (orders, payments)
 
 ### Caching Strategy
 
 **Multi-Level Caching**:
-1. **CDN**: Static assets and images
-2. **API Gateway**: Response caching
-3. **Service Level**: Business logic caching
-4. **Database**: Query result caching
+1. **API Gateway**: Product catalog, pricing rules
+2. **Service Level**: Inventory levels, customer data
+3. **Database**: Query result caching
+4. **Frontend**: Client-side React Query caching
 
 ### Performance Optimization
 
-**Code Optimization**:
-- Lazy loading and code splitting
+**Backend**:
 - Database query optimization
-- Image optimization and WebP
-- Gzip compression
+- Batch processing for bulk operations
+- Async processing with Kafka
+- Connection pooling and timeouts
 
-**Monitoring**:
-- Application Performance Monitoring (APM)
-- Real-time metrics with Prometheus
-- Distributed tracing
-- Error tracking and alerting
+**Frontend**:
+- Code splitting and lazy loading
+- Image optimization
+- Next.js incremental static regeneration
+- Service worker for offline capability
 
 ## Deployment Architecture
 
@@ -252,17 +294,19 @@ The platform follows a microservices architecture pattern with event-driven comm
 
 **Docker Strategy**:
 - Multi-stage builds for optimization
-- Distroless base images for security
+- Distroless base images
 - Health checks and graceful shutdown
-- Resource limits and requests
+- Resource limits for each service
 
 ### Orchestration
 
 **Kubernetes** (Production):
 - Service discovery and load balancing
-- Auto-scaling based on metrics
-- Rolling deployments
-- ConfigMaps and Secrets management
+- Auto-scaling based on CPU/memory metrics
+- Rolling deployments with health checks
+- ConfigMaps for configuration
+- Secrets for sensitive data
+- Persistent volumes for databases
 
 **Docker Compose** (Development):
 - Local development environment
@@ -272,46 +316,46 @@ The platform follows a microservices architecture pattern with event-driven comm
 
 ### CI/CD Pipeline
 
-**Continuous Integration**:
-- Automated testing (unit, integration, e2e)
+**GitHub Actions Workflow**:
+- Triggered on push to main/develop branches
+- Automated testing (unit, integration, E2E)
 - Code quality checks (ESLint, PHPStan)
-- Security scanning
-- Dependency vulnerability checks
+- Security scanning (Trivy for container images)
+- Docker image build and push to registry
+- Automated Kubernetes deployment to staging
+- Manual approval for production deployment
 
-**Continuous Deployment**:
-- GitOps workflow
-- Blue-green deployments
-- Canary releases
-- Automated rollbacks
+**Deployment Stages**:
+- Build → Push to registry → Deploy to staging → Health checks → Deploy to production
 
 ## Monitoring & Observability
 
 ### Metrics Collection
 
 **Prometheus Stack**:
-- Application metrics
-- Infrastructure metrics
-- Custom business metrics
-- Alerting rules
+- Application metrics (requests, latency, errors)
+- Infrastructure metrics (CPU, memory, disk)
+- Business metrics (orders/day, revenue, inventory value)
+- Custom ERP metrics (stock aging, pending payments)
 
 **Grafana Dashboards**:
 - System health overview
-- Business KPIs
-- Performance metrics
-- Error rates and latency
+- Business KPIs (daily sales, inventory turnover)
+- Performance metrics (response time, error rates)
+- Operational dashboards (stock levels, pending orders)
 
 ### Logging Strategy
 
 **Centralized Logging**:
 - Structured JSON logs
-- Correlation IDs for tracing
-- Log aggregation with ELK stack
-- Log retention policies
+- Correlation IDs for tracing requests
+- Log aggregation and search
+- Log retention for compliance
 
 ### Distributed Tracing
 
-**OpenTelemetry**:
-- Request tracing across services
+**Request Tracing**:
+- Track requests across API Gateway and microservices
 - Performance bottleneck identification
 - Error propagation tracking
 - Service dependency mapping
@@ -322,59 +366,68 @@ The platform follows a microservices architecture pattern with event-driven comm
 
 **Service Decomposition**:
 - Domain-driven design (DDD)
-- Bounded contexts
+- Bounded contexts per domain
+- Database per service pattern
 - Single responsibility principle
-- Database per service
 
 **Resilience Patterns**:
-- Circuit breaker
+- Circuit breaker for failing services
 - Retry with exponential backoff
-- Bulkhead isolation
 - Timeout handling
+- Graceful degradation
 
 **Data Patterns**:
-- Event sourcing
-- CQRS (Command Query Responsibility Segregation)
+- Event sourcing for audit trails
+- CQRS for read optimization
 - Saga pattern for distributed transactions
 - Outbox pattern for reliable messaging
 
-### Frontend Patterns
+### ERP-Specific Patterns
 
-**State Management**:
-- Server state with React Query
-- Client state with React hooks
-- Global state with Context API
-- Optimistic updates
+**Batch Processing**:
+- Bulk order processing
+- Inventory reconciliation
+- Payment settlement
+- Report generation
 
-**Component Architecture**:
-- Atomic design principles
-- Compound components
-- Render props and hooks
-- Error boundaries
+**Stock Management**:
+- Lot tracking (batch-wise)
+- FIFO/LIFO selection strategies
+- Expiry date monitoring
+- Aging analysis
+
+**Financial**:
+- GST calculation and compliance
+- Credit limit validation
+- Payment terms enforcement
+- Aging of receivables
 
 ## Future Enhancements
 
-### Planned Improvements
+### Phase 1 (Current)
+- Core ERP functionality
+- Docker Compose for development
+- Kubernetes deployment ready
 
-**Technical**:
+### Phase 2
 - Service mesh implementation (Istio)
-- GraphQL federation
-- Event streaming with Apache Pulsar
-- Machine learning recommendations
+- Advanced analytics and BI
+- Mobile POS application
+- Multi-location support
 
-**Business**:
+### Phase 3
+- AI-based demand forecasting
+- Automated reorder point calculation
+- Supplier performance analytics
+- Integration with accounting software
+
+### Phase 4
+- Real-time collaboration features
+- Advanced role-based permissions
 - Multi-tenant architecture
-- Internationalization (i18n)
-- Advanced analytics and reporting
-- Mobile application (React Native)
-
-### Scalability Roadmap
-
-**Phase 1**: Current architecture (up to 10K users)
-**Phase 2**: Kubernetes deployment (up to 100K users)
-**Phase 3**: Multi-region deployment (up to 1M users)
-**Phase 4**: Edge computing and CDN (global scale)
+- Global deployment capabilities
 
 ---
 
-This architecture provides a solid foundation for building a scalable, maintainable, and high-performance e-commerce platform while following industry best practices and modern development patterns.
+This architecture provides a robust foundation for managing complex homeopathy ERP operations while maintaining scalability, reliability, and compliance with business requirements.
+\`\`\`
